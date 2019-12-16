@@ -22,7 +22,6 @@ Three classification models were fit and compared by F1 score on test data. Hype
 
 ![model comparison](/images/model_comparison.png)
 
-
 Of the three models, two of them (decision tree and random forest) were used to compare the effects of two features that were engineered from Spotify's audio analysis data. These features are
 1. Number of musical sections (verse, chorus, bridge, etc.)
 2. Average length of musical sections
@@ -31,9 +30,7 @@ I believe these features will help distinguish between the genres because salsa 
 
 We define the most effective model here using the F1 score, as neither type 1 nor type 2 errors are more significant than the other in the context of picking the right type of dance to a song. The results of the model show that adding the enginnered features does not significantly improve the F1 score. This becomes clear when we examine the distribution of the engineered features between salsa and bachata.
 
-![no_of_sections](/images/no_of_sections.png)
-
-![avg_section_len](/images/avg_section_len.png)
+![no_of_sections](/images/no_of_sections.png) ![avg_section_len](/images/avg_section_len.png)
 
 Each feature has nearly indistinguishable distributions, so it is no wonder the models cannot tell them apart. I am lead to believe that this issue is due to Spotify's audio analysis algorithms. I personally compared Spotify's designated section start times and durations to what I—as a musician—would classify. Rarely were they accurate. I attribute this to the fact that salsa songs do not have a clear verse/chorus distinction like bachata, which probably throws Spotify's algorithms off, resulting in incorrect section analysis. 
 
