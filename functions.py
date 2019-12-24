@@ -107,13 +107,12 @@ def plot_cm(test,pred):
     Param pred: predicted target values based on the test data
     """
 
-    # Create CM
+    # Create CM and labels
     cm = confusion_matrix(test,pred)
-    classes = ['salsa','bachata']
-    print(cm)
+    classes = ['Salsa','Bachata']
 
     # Create fig, ax, and plot
-    fig = plt.figure(figsize=(12,8))
+    fig = plt.figure(figsize=(10,7))
     ax = fig.add_subplot(111)
     cax = ax.matshow(cm,cmap=plt.cm.Oranges)
     fig.colorbar(cax)
@@ -143,10 +142,159 @@ def plot_feature_importances(model, X_train):
     Param model: sklearn model
     Param X_train: array with train data
     """
-    n_features = X_train.shape[1]
+    # Join together feature importances and feature labels
+    feat_imps = tuple(zip(X_train.columns,
+                          model.feature_importances_))
+    
+    # Create df out of this in order to sort by feature importance  
+    # while keeping track of the labels
+    feat_imps_df = pd.DataFrame(data = model.feature_importances_,
+                                index = X_train.columns,
+                                columns = ['feature_importance'])
+
+    feat_imps_df.sort_values(by = 'feature_importance', 
+                             ascending = True, 
+                             inplace=True)
+    
+    # Store number of features for plotting purposes
+    n_features = feat_imps_df.shape[0]
+    
+    # Instantiate plt fig, add data, and appropriate graph labels
     plt.figure(figsize=(8,8))
-    plt.barh(range(n_features), model.feature_importances_, align='center',color='darkorange') 
-    plt.yticks(np.arange(n_features), X_train.columns.map(lambda x: x.title()).values) 
+    plt.barh(range(n_features), 
+             feat_imps_df.feature_importance, 
+             align='center',
+             color='darkorange') 
+    plt.yticks(np.arange(n_features), 
+               feat_imps_df.index.map(lambda x: x.title()).values) 
     plt.xlabel('Feature importance')
     plt.ylabel('Feature')
     plt.title('Model Feature Importances')
+    
+
+def plot_tempo_comp(train_df, tempo_comp):
+    """
+    Plot tempo comparison graph. This outputs a very specific graph only.
+    As such, I won't go into too much detail here.
+    
+    Param train_df: [df] training data set
+    Param tempo_comp: [df] DataFrame containing tempo comparison report
+    """
+    plt.figure(figsize=(12,8))
+
+    # Histogram of salsa tempos from the training set 
+    plt.hist(train_df[train_df['genre'] == 'salsa']['tempo'],
+             bins = 30, 
+             alpha=0.5, 
+             label='Salsa',
+             color='red')
+
+    # Histogram of bachata tempos from the training set 
+    plt.hist(train_df[train_df['genre'] == 'bachata']['tempo'],
+             bins = 30, 
+             alpha=0.6, 
+             label='Bachata',
+             color='darkorange')
+
+    # Average salsa tempos from incorrect prediction set
+    plt.vlines(x = tempo_comp.iloc[1,:].values, 
+               ymin=0, 
+               ymax= 175, 
+               color = 'red')
+
+    # Arrow showing change of average salsa tempo from training set 
+    # to incorrect prediction set
+    plt.arrow(x = tempo_comp.iloc[1,:][0]+1, 
+              y = 120, 
+              dx = 12, 
+              dy = 0, 
+              color = 'red', 
+              width= 0.8, 
+              head_width = 6, 
+              head_length = 6)
+
+    # Add some text by the appropriate average tempo lines
+    plt.text(x = 83,
+             y = 120,
+             s = 'Average tempo of \ntraining salsa set',
+             verticalalignment='center',
+             horizontalalignment = 'left',
+             fontdict = {'fontsize':12})
+
+    plt.text(x = 135,
+             y = 120,
+             s = 'Average tempo of \nincorrectly predicted \nsalsa set',
+             verticalalignment = 'center',
+             horizontalalignment = 'left',
+             fontdict = {'fontsize':12})
+
+    # Add labels and such
+    plt.legend(loc='upper right')
+    plt.xlabel('Tempo (bpm)')
+    plt.ylabel('No. of Songs')
+    plt.title('Tempo Distributions of Training Set')
+    plt.show()    
+    
+    
+def plot_duration_comp(train_df,duration_comp):
+    """
+    Plot tempo comparison graph. This outputs a very specific graph only.
+    As such, I won't go into too much detail here.
+    
+    Param train_df: [df] training data set
+    Param duration_comp: [df] DataFrame containing duration comparison report
+    """
+    plt.figure(figsize=(12,8))
+
+    # Histogram of salsa duration from the training set 
+    plt.hist(train_df[train_df['genre'] == 'salsa']['duration_ms'],
+             bins = 30, 
+             alpha=0.5, 
+             label='Salsa',
+             color='red')
+
+    # Histogram of bachata duration from the training set 
+    plt.hist(train_df[train_df['genre'] == 'bachata']['duration_ms'],
+             bins = 30, 
+             alpha=0.6, 
+             label='Bachata',
+             color='darkorange')
+
+    # Average salsa duration from incorrect prediction set
+    plt.vlines(x = duration_comp.iloc[1,:].values, 
+               ymin=0, 
+               ymax= 175, 
+               color = 'red')
+
+    # Arrow showing change of average salsa duration from training set 
+    # to incorrect prediction set
+    plt.arrow(x = duration_comp.iloc[1,:][0] - 5000, 
+              y = 120, 
+              dx = (duration_comp.iloc[1,:][1] - duration_comp.iloc[1,:][0]) + 20000,
+              dy = 0, 
+              color = 'red', 
+              width= 0.8, 
+              head_width = 8, 
+              head_length = 10000)
+
+    # Add text by appropriate average duration lines
+    plt.text(x = duration_comp.iloc[1,:][0] + 10000,
+             y = 120,
+             s = 'Average duration of \ntraining salsa set',
+             verticalalignment='center',
+             horizontalalignment = 'left',
+             fontdict = {'fontsize':12})
+
+    plt.text(x = duration_comp.iloc[1,:][1] - 110000,
+             y = 120,
+             s = 'Average duration of \nincorrectly predicted \nsalsa set',
+             verticalalignment = 'center',
+             horizontalalignment = 'left',
+             fontdict = {'fontsize':12})
+
+    # Add labels and such
+    plt.legend(loc='upper right')
+    plt.xlabel('Song Duration (ms)')
+    plt.ylabel('No. of Songs')
+    plt.title('Song Duration Distributions of Training Set')
+    plt.show()
