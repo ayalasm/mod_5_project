@@ -2,7 +2,7 @@
 
 These two popular latin music genres are easily distinguished by the trained ear based on trends in tempo, instrumentation, song structure, and harmonic progressions, among other traits. The untrained ear may have trouble discerning between them though. At a dance party, one who cannot distinguish between the two genres could risk the embarrassment of trying to dance the wrong steps to a particular song. The goal of this project is to train a machine to assist in the classification between salsa and bachata.
 
-A google slides presentation of this information can be found [here](https://docs.google.com/presentation/d/1La_izkUMcy25iAOFLS3TLR4UAAvzNRefCUr17FlOLdk/edit?usp=sharing). Alternatively, a PDF of the presentation is available in the repo. The final notebook for this project is saved as *mod_5_notebook.ipynb*.
+A google slides presentation of this information can be found [here](https://docs.google.com/presentation/d/1La_izkUMcy25iAOFLS3TLR4UAAvzNRefCUr17FlOLdk/edit?usp=sharing). Alternatively, a PDF of the presentation is available in the repo. The final notebook for this project is saved as __*mod_5_notebook.ipynb*__.
 
 # Data
 Audio information was obtained from the Spotify API on roughly 1400 tracks from 8 popular salsa and bachata artists. There is roughly a 45:55 ratio between salsa and bachata songs. Audio features from spotify include:
