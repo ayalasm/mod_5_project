@@ -7,14 +7,22 @@ import json
 REQUEST OAUTH TOKEN
 ------------------
 """
-# Set parameters for the POST request. Based on Spotify OAuth documentation.
-auth_url = 'https://accounts.spotify.com/api/token'
-auth_params = {'grant_type':'client_credentials'}
-auth_header = {'Authorization':'Basic MGY3MTFjMjM1OGI0NDIzNGEyNWJiMDc1MWJkNTdjYTY6OTg4NjRlYjc0ODYyNGE3OTg4MDRhMjlhOWNiODRmNDg='}
+def request_token():
+    """
+    RETURNS
+    -------
+    Temporary authorization token necessary to make API calls.
+    """
+    # Set parameters for the POST request. Based on Spotify OAuth documentation.
+    auth_url = 'https://accounts.spotify.com/api/token'
+    auth_params = {'grant_type':'client_credentials'}
+    auth_header = {'Authorization':f'Basic {config.encoded_key}'}
 
-# Make request and retrieve a token
-auth_response = requests.post(url = auth_url, data = auth_params,headers=auth_header)
-token = auth_response.json()['access_token']
+    # Make request and retrieve a token
+    auth_response = requests.post(url = auth_url, data = auth_params,headers=auth_header)
+    return auth_response.json()['access_token']
+
+token = request_token()
 
 """
 HELPERS FOR API CALL AND PARSING
@@ -48,14 +56,15 @@ def api_call(kind, token, params = None, id_ = None):
     assert kind in allowed_kinds, f'Please use from the api call types {allowed_kinds}'
 
     # Set the appropriate url based on the specified `kind`
-    urls = {'search':'https://api.spotify.com/v1/search',
-            'artists':'https://api.spotify.com/v1/artists/',
-            'albums':f'https://api.spotify.com/v1/artists/{id_}/albums',
-            'album_tracks':f'https://api.spotify.com/v1/albums/{id_}/tracks',
-            'analysis':f'https://api.spotify.com/v1/audio-analysis/{id_}',
-            'features':f'https://api.spotify.com/v1/audio-features/{id_}',
-            'tracks':f'https://api.spotify.com/v1/tracks/{id_}'}
-    url = urls[kind]
+    urls = {'search':'search',
+            'artists':'artists/',
+            'albums':f'artists/{id_}/albums',
+            'album_tracks':f'albums/{id_}/tracks',
+            'analysis':f'audio-analysis/{id_}',
+            'features':f'audio-features/{id_}',
+            'tracks':f'tracks/{id_}'}
+
+    url = 'https://api.spotify.com/v1/' + urls[kind]
 
     # Set call authorization
     auth = {'Authorization':f'Bearer {token}'}
@@ -66,7 +75,7 @@ def parse_search(search_results):
     """
     RETURNS
     -------
-    A string of the id associated with the search result.
+    The artist id associated with the search result.
 
     PARAMETERS
     ----------
@@ -100,7 +109,10 @@ def parse_tracks(tracks_results):
     RETURNS
     -------
     A dictionary from the tracks_results with only relevant key:value pairs.
-    Param features_results: [JSON] the output of the api_call function with 'tracks'
+
+    PARAMETERS
+    ----------
+    tracks_results: [JSON] the output of the api_call function with 'tracks'
         used as the first argument.
     """
     # Empty container for parsed track info
@@ -128,63 +140,128 @@ API CALLS AND PARSING
 """
 1. Start with artist names to get Spotify artist IDs
 """
-# Manually pick artists whose music we'll explore. 4 Salsa, 4 Bachata.
+# Pick artists whose music we'll explore. 4 Salsa, 4 Bachata.
 artists = {
     'salsa':["Oscar D'León", "Frankie Ruiz","Tito Nieves", "La Maxima 79"],
     'bachata':["Aventura", "Monchy & Alexandra", "Prince Royce", "Romeo Santos"]
 }
-# Container to store their ids
-artist_ids = {
-    'salsa':{},
-    'bachata':{}
-}
-# Iterate through each genre and then through each artist name
-for genre in ['salsa', 'bachata']:
-    for artist in artists[genre]:
 
-        # Set search params.
-        params = {
-              'q':f'{artist}',   # Search Query: [str] spaces must be separated by %20 or +
-              'type':'artist',   # Type of response: [str | comma sep optional] album, artist, playlist, and track
-              'limit':None,      # No. of responses: [int] default is 20. Can be (1, 50)
-              'offset':None      # Index of where to start in the search results. Can be (1, 100,000)
+def get_artist_ids(artists, token):
+    """
+    RETURNS
+    -------
+    A dict with artist ids separated into respective genres. Example:
+        {
+            'genre_1':{
+                'artist_1': 'artist id',
+                'artist_2': 'artist id',
+                etc.
+            },
+            'genre_2':{
+                'artist_1': 'artist id',
+                'artist_2': 'artist id',
+                etc.
+            },
+            etc.
         }
 
-        # Make API call and then parse to append id to artist_ids
-        search_results = api_call('search', token, params)
-        artist_ids[genre][artist] = parse_search(search_results)
+    PARAMETERS
+    ----------
+    artsits: [dict] contains genre and artist information in the form:
+        {
+            'genre_1':[artist names],
+            'genre_2':[artist names],
+            etc.
+        }
+
+    token: [str] The temporary OAuth token obtained from request_token()
+
+    """
+
+
+    # Container to store artist ids. Depends on number of genres in `artists`
+    artist_ids = {genre:{} for genre in artists.keys()}
+
+    # Iterate through each genre and then through each artist name
+    for genre, artists in artists.items():
+        for artist in artists:
+
+            # Set search params.
+            params = {
+                  'q':f'{artist}',   # Search Query: [str] spaces must be separated by %20 or +
+                  'type':'artist',   # Type of response: [str | comma sep optional] album, artist, playlist, and track
+                  'limit':None,      # No. of responses: [int] default is 20. Can be (1, 50)
+                  'offset':None      # Index of where to start in the search results. Can be (1, 100,000)
+            }
+
+            # Make API call and then parse to append id to artist_ids
+            search_results = api_call('search', token, params)
+            artist_ids[genre][artist] = parse_search(search_results)
+
+    return artist_ids
 
 """
 2. Using artist IDs, get up to 50 album IDs per artist
 """
 
-# Empty dict to store results
-artist_album_ids = {
-    'salsa':{},
-    'bachata':{}
-}
+def get_album_ids(artist_ids, token):
+    """
+    RETURNS
+    -------
+    A dict with artists' album ids separated into respective genres. Example:
+        {
+            'genre_1':{
+                'artist_1': [album ids],
+                'artist_2': [album ids],
+                etc.
+            },
+            'genre_2': {
+                'artist_1': [album ids],
+                'artist_2': [album ids],
+                etc.
+            etc.
+            }
+        }
 
-for genre in ['salsa', 'bachata']:
-    for artist in artist_ids[genre]:
+    PARAMETERS
+    ----------
+    artsits: [dict] contains genre and artist information in the form:
+        {
+            'genre_1':[artist names],
+            'genre_2':[artist names],
+            etc.
+        }
 
-        # Capture up to 50 albums by current artist in the loop
-        params={'limit':20}
+    token: [str] The temporary OAuth token obtained from request_token()
 
-        # Make API call using artist ID of the current artist in the loop
-        albums = api_call('albums', token, params=params, id_=artist_ids[genre][artist])
+    """
 
-        # Generate list of the album ids for the current artist in the loop. Filter out albums
-        # That are not entirely their own by restricting the album artist name to be only the name
-        # of the current artist in the loop
-        album_ids = [album['id']
-                        for album in albums['items']
-                        if album['artists'][0]['name'] == artist]
+    # Container to store album ids. Depends on number of genres in `artist_ids`
+    artist_album_ids = {genre:{} for genre in artist_ids.keys()}
 
-        # Add this list to a dict
-        artist_album_ids[genre][artist] = album_ids
+    for genre, artists in artist_ids.items():
+        for artist in artists:
 
-        # Wait a little bit to not get kicked off API
-        time.sleep(0.25)
+            # Capture up to 50 albums by current artist in the loop
+            params={'limit':20}
+
+            # Make API call using artist ID of the current artist in the loop
+            albums = api_call('albums', token, params=params, id_=artist_ids[genre][artist])
+
+            # Generate list of the album ids for the current artist in the loop. Filter out albums
+            # That are not entirely their own by restricting the album artist name to be only the name
+            # of the current artist in the loop
+            album_ids = [album['id']
+                         for album in albums['items']
+                         if album['artists'][0]['name'] == artist]
+
+            # Add this list to a dict
+            artist_album_ids[genre][artist] = album_ids
+
+            # Wait a little bit to not get kicked off API
+            time.sleep(0.25)
+
+    return artist_album_ids
 
 
 # """
