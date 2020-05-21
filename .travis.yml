@@ -6,4 +6,4 @@ install:
     - pip install -e .
     - pip install pytest-cov codecov # Install packcages for code coverage report
 script:
-    - pytest --cov=src tests # Point to the source directory
+    - pytest --cov=src test # Point to the source directory
