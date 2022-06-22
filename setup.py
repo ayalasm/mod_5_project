@@ -9,7 +9,7 @@ setup(
     package_dir = {"": "src"},
     author_email = "sanchezayala.marco@gmail.com",
     install_requires = [
-        "numpy==1.18.2",
+        "numpy==1.22.0",
         "pandas==0.25.3",
         "pytest==5.3.2",
         "spotipy==2.11.2",
