@@ -12,6 +12,6 @@ setup(
         "numpy==1.18.2",
         "pandas==0.25.3",
         "pytest==5.3.2",
-        "spotipy==2.11.2",
+        "spotipy==2.22.1",
     ],
 )
